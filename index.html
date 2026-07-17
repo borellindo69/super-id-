@@ -1568,7 +1568,7 @@ $('#iaAttach').onclick=()=>$('#iaFile').click();
 $('#iaFile').onchange=e=>{const f=e.target.files[0];$('#iaPop').classList.remove('show');$('#iaPlus').classList.remove('open');if(f){iaMsgs++;iaHeroSync();iaPush(`<div class="ia-msg q">📎 ${f.name}</div>`);toast('Mídia anexada: '+f.name);}};
 document.addEventListener('click',e=>{if(!e.target.closest('.ia-composer')){$('#iaPop').classList.remove('show');$('#iaPlus').classList.remove('open');}});
 
-let tPac=null, atual=null, docSeq=7;
+let tPac=null, atual=null, docSeq=7, lastSigned=null;
 let atendimento={avaliacao:'',conduta:'',acomp:'',retorno:'',alerta:''}, sessDocs=[];
 let docFilter={type:'all',pac:'all',sort:'recent',q:''};
 let mDraft={nome:'',conc:'',forma:'',qtd:'',via:'Uso oral',pos:''};
@@ -1587,7 +1587,7 @@ let DOCS=[
 ];
 function dkey(s){const p=String(s).split('/');return +(p[2]+p[1]+p[0]);}
 function todayBR(){return new Date().toLocaleDateString('pt-BR');}
-function openTrat(){ tPac=cur; atual=null; atendimento=Object.assign({avaliacao:'',conduta:'',acomp:'',retorno:'',alerta:''}, cur.planoDraft||{}); sessDocs=[]; mDraft={nome:'',conc:'',forma:'',qtd:'',via:'Uso oral',pos:''}; renderCtx(); renderCompose(); renderDraft(); renderClose(); renderDocList(); wireDocTools(); updateCbSum(); }
+function openTrat(){ tPac=cur; atual=null; lastSigned=null; atendimento=Object.assign({avaliacao:'',conduta:'',acomp:'',retorno:'',alerta:''}, cur.planoDraft||{}); sessDocs=[]; mDraft={nome:'',conc:'',forma:'',qtd:'',via:'Uso oral',pos:''}; renderCtx(); renderCompose(); renderDraft(); renderClose(); renderDocList(); wireDocTools(); updateCbSum(); }
 function renderCtx(){
   if(!tPac)return;
   const opts=PACS.map(p=>`<option value="${p.id}" ${tPac.id===p.id?'selected':''}>${p.nome} · ${p.plano}</option>`).join('');
@@ -1597,7 +1597,7 @@ function renderCtx(){
     <div class="ps-main"><div class="ps-nm">${tPac.nomeCompleto}</div><div class="ps-mt">${tPac.idade} anos · CPF ${tPac.cpf} · ${tPac.plano}</div></div>
     <div class="ps-al${al?' warn':''}">${al?'⚠ '+tPac.alergias.join(', '):'sem alergias conhecidas'}</div>
     <select id="tPacSel">${opts}</select>`;
-  $('#tPacSel').onchange=e=>{tPac=PACS.find(p=>p.id===e.target.value)||tPac;atual=null;atendimento={avaliacao:'',conduta:'',acomp:'',retorno:'',alerta:''};sessDocs=[];renderCtx();renderCompose();renderDraft();renderClose();renderDocList();updateCbSum();};
+  $('#tPacSel').onchange=e=>{tPac=PACS.find(p=>p.id===e.target.value)||tPac;atual=null;lastSigned=null;atendimento={avaliacao:'',conduta:'',acomp:'',retorno:'',alerta:''};sessDocs=[];renderCtx();renderCompose();renderDraft();renderClose();renderDocList();updateCbSum();};
 }
 function startAct(a){
   if(a==='med')atual={t:'med',tipo:'simples',meds:[]};
@@ -1668,9 +1668,9 @@ function signAtual(){
   if(atual.t==='atest'&&!(atual.dias||'').trim()){toast('Informe os dias de afastamento');return;}
   const nome=AN[atual.t];
   const novo=Object.assign({id:++docSeq,pacId:tPac.id,data:todayBR(),code:'AB12-CD34',situacao:'em acompanhamento'},JSON.parse(JSON.stringify(atual)));
-  DOCS.unshift(novo); sessDocs.push(novo.id);
-  atual=null; renderCompose(); renderDraft(); renderDocList(); updateCbSum();
-  toast(nome+' assinado com e-CPF (ICP-Brasil) e emitido ✓');
+  sessDocs.push(novo); lastSigned=novo;
+  atual=null; renderCompose(); renderDraft(); updateCbSum();
+  toast(nome+' assinado com e-CPF (ICP-Brasil) ✓ — revise no preview e clique em "Concluir e enviar ao paciente"');
 }
 function shHead(tipo,extra){return `<div class="sh-head"><div class="sh-doc"><div class="nm">${MED.nome}</div><div class="sp">${MED.esp}</div><div class="crm">${MED.crm} · ${MED.rqe}</div><div class="addr">${MED.addr}</div></div><div class="sh-brand"><span class="lg"><span class="b1">super</span><span class="b2">id</span></span><div class="ty">${tipo}</div>${extra||''}</div></div>`;}
 function shPac(P){return `<div class="sh-pac"><div>Paciente: <b>${P.nomeCompleto||P.nome}</b></div><div>CPF: <b>${P.cpf}</b></div><div>Idade: <b>${P.idade} anos</b></div></div>`;}
@@ -1693,7 +1693,7 @@ function sheetFor(d,signed){
     note='Atestado médico · assinatura digital ICP-Brasil.';}
   return `<div class="sh-block"><div class="sh-status ${signed?'emit':'draft'}">${signed?'✓ emitido · assinado':'rascunho — assine para emitir'}</div><div class="sheet">${shHead(tipo,extra)}${shPac(P)}${body}${shFoot(note,signed,code)}</div></div>`;
 }
-function renderDraft(){const w=$('#draftWrap');if(!w)return;if(!atual){w.innerHTML='<div class="st-empty">Escolha um documento à esquerda (medicamento, exame, encaminhamento ou atestado) para ver o preview aqui.</div>';return;}w.innerHTML=sheetFor(atual,false);}
+function renderDraft(){const w=$('#draftWrap');if(!w)return;if(atual){w.innerHTML=sheetFor(atual,false);return;}if(lastSigned){w.innerHTML=sheetFor(lastSigned,true);return;}w.innerHTML='<div class="st-empty">Escolha um documento à esquerda (medicamento, exame, encaminhamento ou atestado) para ver o preview aqui.</div>';}
 function renderSheets(){ renderDraft(); renderDocList(); renderSafety(); }
 function renderClose(){
   const el=$('#tClose'); if(!el)return; const r=atendimento.retorno;
@@ -1743,10 +1743,12 @@ function updateCbSum(){ const el=$('#cbSum'); if(!el)return; const n=sessDocs.le
 function concluirAtendimento(){
   const n=sessDocs.length; const cond=(atendimento.conduta||'').trim();
   if(!n&&!cond){toast('Escreva a orientação ou emita um documento antes de concluir');return;}
+  sessDocs.forEach(d=>DOCS.unshift(d));
   const ret=atendimento.retorno?(' · retorno em '+atendimento.retorno+' dias'):'';
-  toast('Atendimento de '+tPac.nome+' concluído — o concierge assume o acompanhamento com a sua conduta'+((atendimento.alerta||'').trim()?' e te chama nos alertas':'')+ret+' ✓');
-  atendimento={avaliacao:'',conduta:'',acomp:'',retorno:'',alerta:''}; sessDocs=[]; atual=null;
-  renderCompose(); renderDraft(); renderClose(); updateCbSum();
+  const docMsg=n?(n+(n===1?' documento enviado ao paciente':' documentos enviados ao paciente')):'conduta enviada ao concierge';
+  toast('Atendimento de '+tPac.nome+' concluído — '+docMsg+((atendimento.alerta||'').trim()?' · te chamo nos alertas':'')+ret+' ✓');
+  atendimento={avaliacao:'',conduta:'',acomp:'',retorno:'',alerta:''}; sessDocs=[]; atual=null; lastSigned=null;
+  renderCompose(); renderDraft(); renderClose(); renderDocList(); updateCbSum();
 }
 function docsFiltered(){
   let a=DOCS.slice();
@@ -1780,9 +1782,4 @@ function wireDocTools(){
 }
 function openDocModal(id){const d=DOCS.find(x=>String(x.id)===String(id));if(!d)return;$('#dmBody').innerHTML=sheetFor(d,true);$('#docModal').classList.add('on');genQRs();}
 function closeDocModal(){$('#docModal').classList.remove('on');}
-function genQRs(){ if(typeof QRCode==='undefined')return; document.querySelectorAll('#docModal .qr').forEach(el=>{el.innerHTML='';try{const url=new URL('verificar.html?doc='+(el.dataset.code||'AB12-CD34'),location.href).href;new QRCode(el,{text:url,width:56,height:56,colorDark:'#101820',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){}});}
-
-abrir('ana'); drSync();
-</script>
-</body>
-</html>
+function genQRs(){ if(typeof QRCode==='undefined')return; document.querySelectorAll('#docModal .qr').forEach(el=
