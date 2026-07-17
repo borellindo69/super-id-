@@ -1782,4 +1782,8 @@ function wireDocTools(){
 }
 function openDocModal(id){const d=DOCS.find(x=>String(x.id)===String(id));if(!d)return;$('#dmBody').innerHTML=sheetFor(d,true);$('#docModal').classList.add('on');genQRs();}
 function closeDocModal(){$('#docModal').classList.remove('on');}
-function genQRs(){ if(typeof QRCode==='undefined')return; document.querySelectorAll('#docModal .qr').forEach(el=
+function genQRs(){ if(typeof QRCode==='undefined')return; document.querySelectorAll('#docModal .qr').forEach(el=>{el.innerHTML='';try{const url=new URL('verificar.html?doc='+(el.dataset.code||'AB12-CD34'),location.href).href;new QRCode(el,{text:url,width:56,height:56,colorDark:'#101820',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}catch(e){}});}
+renderFila();abrir(PACS[0].id);
+</script>
+</body>
+</html>
