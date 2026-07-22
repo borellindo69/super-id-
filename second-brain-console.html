@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>super id · Second Brain</title>
+<style>
+:root{
+  --window:#0C1116; --rail:#10161C; --panel:#12181F; --panel-2:#1A222B; --panel-3:#232D37;
+  --text:#E6EDF3; --text-2:#AEB9C4; --muted:#6E7B87; --faint:#4B5661;
+  --line:#26303A; --line-2:#1B232B; --line-strong:#33404B;
+  --brand:#F07E63; --brand-press:#E1613F; --brand-tint:rgba(240,126,99,.14); --brand-bd:rgba(240,126,99,.34);
+  --ok:#3FB98C; --ok-bg:rgba(63,185,140,.12);
+  --warn:#D3841C; --warn-bg:rgba(211,132,28,.12);
+  --danger:#E5534B; --danger-bg:rgba(229,83,75,.12);
+  --ident:#EF9F27; --ident-tint:rgba(239,159,39,.14); --ident-bd:rgba(239,159,39,.55);
+  --r-card:6px; --r-btn:5px; --r-in:4px; --r-chip:4px; --r-pill:999px;
+  --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 12px 32px rgba(0,0,0,.55);
+  --mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+  --t1:120ms; --t2:200ms; --ease:cubic-bezier(.2,.6,.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;font-size:13px;line-height:1.35;background:var(--window);color:var(--text);overflow:hidden}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:#2b3947;border-radius:9px;border:2px solid var(--window)}::-webkit-scrollbar-track{background:transparent}
+button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:12.5px;background:var(--panel-3);border:1px solid var(--line);border-radius:var(--r-in);color:var(--text);padding:6px 9px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--brand-bd);box-shadow:0 0 0 2px var(--brand-tint)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+
+/* ===== SHELL ===== */
+#app{display:grid;grid-template-columns:50px 1fr auto;height:100vh;position:relative}
+#app.ident{box-shadow:inset 0 0 0 3px var(--ident-bd)}
+#app.ident::after{content:'';position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 0 3px var(--ident-bd);z-index:400}
+
+/* rail */
+#rail{background:var(--rail);border-right:1px solid var(--line-2);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:3px;z-index:50}
+.rl-logo{width:30px;height:30px;border-radius:8px;background:var(--brand);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;letter-spacing:-.5px}
+.ri{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);position:relative;transition:all var(--t1) var(--ease)}
+.ri:hover{color:var(--text);background:var(--panel-2)}
+.ri.on{background:var(--brand-tint);color:var(--brand)}
+.ri svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ri .bdg{position:absolute;top:2px;right:2px;min-width:15px;height:15px;padding:0 4px;border-radius:8px;background:var(--brand);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:var(--mono)}
+.ri .tip{position:absolute;left:46px;top:50%;transform:translateY(-50%);background:var(--panel-3);border:1px solid var(--line);color:var(--text);font-size:11px;padding:4px 9px;border-radius:5px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity var(--t1);z-index:60;box-shadow:var(--sh-1)}
+.ri:hover .tip{opacity:1}
+.rl-spacer{flex:1}
+
+/* main */
+#main{display:flex;flex-direction:column;min-width:0;background:var(--panel)}
+#tabbar{display:flex;align-items:center;gap:2px;padding:6px 10px;background:var(--rail);border-bottom:1px solid var(--line-2);min-height:40px}
+.tab{display:flex;align-items:center;gap:7px;padding:5px 11px;border-radius:6px;font-size:12px;color:var(--text-2);max-width:190px;transition:background var(--t1)}
+.tab:hover{background:var(--panel-2)}
+.tab.on{background:var(--panel-2);color:var(--text)}
+.tab.preview .t-title{font-style:italic;color:var(--text-2)}
+.tab.pinned .t-pin{display:inline}
+.tab .t-pin{display:none;color:var(--brand);font-size:10px}
+.tab .t-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tab .t-x{color:var(--faint);font-size:13px;line-height:1;padding:1px 3px;border-radius:3px}
+.tab .t-x:hover{background:var(--panel-3);color:var(--text)}
+#tabbar .sp{flex:1}
+
+/* mode pill */
+#modePill{display:flex;align-items:center;gap:7px;font-size:11.5px;padding:5px 12px;border-radius:var(--r-pill);border:1px solid var(--line-strong);color:var(--text-2);white-space:nowrap}
+#modePill .dot{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+#modePill.ident{border-color:var(--ident-bd);background:var(--ident-tint);color:var(--ident)}
+#modePill.ident .dot{background:var(--ident)}
+
+/* break-glass bar */
+#bgBar{display:none;align-items:center;gap:10px;padding:7px 14px;background:var(--ident-tint);border-bottom:1px solid var(--ident-bd);font-size:12px;color:var(--ident)}
+#bgBar.on{display:flex}
+#bgBar b{color:var(--text)}
+#bgBar .mono{font-size:11.5px}
+#bgBar .out{margin-left:auto;color:var(--text-2);font-size:11.5px;padding:3px 10px;border:1px solid var(--line-strong);border-radius:5px}
+#bgBar .out:hover{color:var(--text);border-color:var(--ident-bd)}
+
+#stage{flex:1;overflow:auto;position:relative;min-height:0}
+
+/* assistente */
+#asst{width:44px;background:var(--rail);border-left:1px solid var(--line-2);display:flex;flex-direction:column;transition:width var(--t2) var(--ease);overflow:hidden}
+#asst.open{width:330px}
+#asstHead{display:flex;align-items:center;gap:8px;padding:10px;min-width:330px}
+#asstToggle{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--brand)}
+#asstToggle:hover{background:var(--panel-2)}
+#asstTitle{font-size:12px;font-weight:600;color:var(--text-2);opacity:0;transition:opacity var(--t1)}
+#asst.open #asstTitle{opacity:1}
+#asstBody{flex:1;display:none;flex-direction:column;min-width:330px;padding:0 10px 10px}
+#asst.open #asstBody{display:flex}
+#asstScope{font-size:10.5px;padding:5px 9px;border-radius:5px;background:var(--panel-2);color:var(--muted);margin-bottom:8px}
+#asstScope.ident{background:var(--ident-tint);color:var(--ident)}
+#asstMsgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-bottom:8px}
+.am{font-size:12px;line-height:1.5;padding:8px 11px;border-radius:8px;max-width:94%}
+.am.q{background:var(--panel-3);align-self:flex-end}
+.am.a{background:var(--panel-2);color:var(--text-2);align-self:flex-start}
+.am.a .src{display:block;margin-top:5px;font-size:10px;color:var(--muted);font-family:var(--mono)}
+.am.deny{border:1px solid var(--danger);color:var(--danger)}
+#asstIn{display:flex;gap:6px}
+#asstIn input{flex:1}
+#asstIn button{background:var(--brand);color:#fff;border-radius:5px;padding:0 12px;font-size:12px;font-weight:600}
+
+/* ===== views ===== */
+.view{padding:16px 18px;max-width:1280px}
+.vhead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.vhead h1{font-size:16px;font-weight:650;letter-spacing:-.2px}
+.vhead .sub{font-size:12px;color:var(--muted)}
+.card{background:var(--panel-2);border:1px solid var(--line-2);border-radius:var(--r-card);padding:13px 15px}
+.btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:7px 13px;border-radius:var(--r-btn);transition:all var(--t1)}
+.btn-p{background:var(--brand);color:#fff}
+.btn-p:hover{background:var(--brand-press)}
+.btn-g{border:1px solid var(--line-strong);color:var(--text-2)}
+.btn-g:hover{color:var(--text);border-color:var(--muted)}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border:1px solid transparent}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 9px;border-radius:var(--r-chip);border:1px solid var(--line);color:var(--text-2);background:var(--panel-2)}
+.chip.on{background:var(--brand-tint);border-color:var(--brand-bd);color:var(--brand)}
+.chip .x{color:var(--faint);margin-left:2px}
+.tag{font-size:10px;padding:2px 7px;border-radius:var(--r-pill);font-weight:600}
+.tag.ok{background:var(--ok-bg);color:var(--ok)}
+.tag.warn{background:var(--warn-bg);color:var(--warn)}
+.tag.danger{background:var(--danger-bg);color:var(--danger)}
+.tag.neutral{background:var(--panel-3);color:var(--muted)}
+.prov{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);font-family:var(--mono)}
+.prov .pd{width:6px;height:6px;border-radius:50%;background:var(--ok)}
+.prov.stale .pd{background:var(--danger)}
+.prov.aging .pd{background:var(--warn)}
+.empty{padding:40px;text-align:center;color:var(--muted);font-size:12.5px}
+.empty b{color:var(--text-2)}
+.restricted{display:flex;align-items:center;gap:8px;padding:11px 14px;background:var(--panel-3);border:1px dashed var(--line-strong);border-radius:var(--r-card);color:var(--muted);font-size:12px}
+.restricted .lock{color:var(--warn)}
+
+/* grafo */
+#gbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+#gcv{width:100%;height:430px;display:block;background:var(--window);border:1px solid var(--line-2);border-radius:var(--r-card)}
+#glegend{display:flex;gap:12px;flex-wrap:wrap;margin-top:9px;font-size:11.5px;color:var(--text-2)}
+#glegend .li{display:flex;align-items:center;gap:5px;cursor:pointer;padding:3px 7px;border-radius:4px}
+#glegend .li:hover{background:var(--panel-2)}
+#glegend .li.dim{opacity:.35}
+#glegend .sw{width:9px;height:9px;border-radius:50%}
+.kanon{margin-left:auto;font-size:10.5px;color:var(--faint);font-family:var(--mono)}
+
+/* fila */
+.subfilas{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.qitem{display:grid;grid-template-columns:auto 1fr auto auto auto;gap:12px;align-items:center;padding:10px 13px;border:1px solid var(--line-2);border-radius:var(--r-card);background:var(--panel-2);margin-bottom:7px;transition:border-color var(--t1)}
+.qitem:hover{border-color:var(--line-strong)}
+.qitem .qtype{font-size:10px;font-family:var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em;width:110px}
+.qitem .qmain{min-width:0}
+.qitem .qt{font-size:12.5px;color:var(--text)}
+.qitem .qs{font-size:11px;color:var(--muted);margin-top:2px}
+.qsla{font-size:10.5px;font-family:var(--mono)}
+.qsla.late{color:var(--danger)}
+.qsla.soon{color:var(--warn)}
+.qsla.okk{color:var(--muted)}
+
+/* item aberto (field-scoped) */
+.fs-wrap{display:grid;grid-template-columns:1fr 360px;gap:14px}
+.fs-doc{background:#F4F1EA;color:#222;border-radius:6px;padding:18px;font-family:Georgia,serif;font-size:12.5px;line-height:1.65;box-shadow:var(--sh-1)}
+.fs-doc .hl{background:#FFE9A8;padding:1px 4px;border-radius:3px;font-weight:700}
+.fs-doc .dh{font-size:10px;font-family:var(--mono);color:#8a8375;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+
+/* ficha */
+.pf-head{display:flex;align-items:center;gap:12px;margin-bottom:13px}
+.pf-av{width:42px;height:42px;border-radius:50%;background:var(--panel-3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--text-2)}
+.pf-name{font-size:15px;font-weight:650}
+.pf-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:13px}
+.mc{background:var(--panel-2);border:1px solid var(--line-2);border-radius:var(--r-card);padding:11px 13px;cursor:pointer;transition:border-color var(--t1)}
+.mc:hover{border-color:var(--brand-bd)}
+.mc .ml{font-size:10.5px;color:var(--muted)}
+.mc .mv{font-size:20px;font-weight:650;margin-top:3px;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.mc .ms{font-size:10px;color:var(--faint);margin-top:2px}
+.pf-grid{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:start}
+.pf-index{position:sticky;top:0;display:flex;flex-direction:column;gap:2px}
+.pf-index a{font-size:11.5px;color:var(--muted);padding:5px 9px;border-radius:5px;text-decoration:none;border-left:2px solid transparent}
+.pf-index a:hover{color:var(--text);background:var(--panel-2)}
+.pf-index a.on{color:var(--brand);border-left-color:var(--brand);background:var(--brand-tint)}
+.sec{margin-bottom:11px;border:1px solid var(--line-2);border-radius:var(--r-card);background:var(--panel-2);overflow:hidden}
+.sec-h{display:flex;align-items:center;gap:8px;padding:10px 13px;cursor:pointer;user-select:none}
+.sec-h:hover{background:var(--panel-3)}
+.sec-h .st{font-size:12.5px;font-weight:600}
+.sec-h .sc{font-size:10.5px;color:var(--muted);font-family:var(--mono)}
+.sec-h .chev{margin-left:auto;color:var(--faint);transition:transform var(--t1)}
+.sec.open .chev{transform:rotate(90deg)}
+.sec-b{display:none;padding:4px 13px 12px;border-top:1px solid var(--line-2)}
+.sec.open .sec-b{display:block}
+.exrow{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-2);font-size:12px}
+.exrow:last-child{border-bottom:0}
+.exrow .loinc{font-size:10px;color:var(--faint);font-family:var(--mono)}
+.exrow .val{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.conflict{border:1px solid var(--warn);border-radius:var(--r-card);padding:9px 12px;margin:7px 0;background:var(--warn-bg)}
+.conflict .ch{font-size:11px;color:var(--warn);font-weight:700;margin-bottom:5px}
+.evo{display:flex;gap:14px;flex-wrap:wrap}
+.evo-card{background:var(--panel-2);border:1px solid var(--line-2);border-radius:var(--r-card);padding:10px 13px;min-width:190px;cursor:pointer}
+.evo-card:hover{border-color:var(--brand-bd)}
+.evo-card .el{font-size:11px;color:var(--text-2)}
+.evo-card svg{margin-top:5px}
+
+/* clientes */
+.funil{display:flex;gap:8px;margin:12px 0}
+.fstep{flex:1;background:var(--panel-2);border:1px solid var(--line-2);border-radius:var(--r-card);padding:11px 13px}
+.fstep .fv{font-size:19px;font-weight:650;font-family:var(--mono)}
+.fstep .fl{font-size:10.5px;color:var(--muted);margin-top:2px}
+.fstep.drop{border-color:var(--warn)}
+
+/* tabelas */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:7px 9px;border-bottom:1px solid var(--line)}
+.tbl td{padding:7px 9px;border-bottom:1px solid var(--line-2);color:var(--text-2)}
+.tbl tr:hover td{background:var(--panel-2)}
+.tbl td.mono{font-size:11px}
+
+/* overlays */
+.ovl{position:fixed;inset:0;background:rgba(5,8,11,.72);display:none;align-items:flex-start;justify-content:center;z-index:500;padding-top:12vh}
+.ovl.on{display:flex}
+.modal{background:var(--panel-2);border:1px solid var(--line-strong);border-radius:10px;box-shadow:var(--sh-2);width:480px;max-width:92vw;padding:18px 20px}
+.modal h2{font-size:14px;font-weight:650;margin-bottom:4px}
+.modal .msub{font-size:11.5px;color:var(--muted);margin-bottom:13px}
+.rc-list{display:flex;flex-direction:column;gap:5px;margin-bottom:11px}
+.rc{display:flex;align-items:center;gap:9px;padding:8px 11px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;color:var(--text-2);cursor:pointer}
+.rc:hover{border-color:var(--line-strong)}
+.rc.sel{border-color:var(--ident-bd);background:var(--ident-tint);color:var(--text)}
+.rc .rdot{width:8px;height:8px;border-radius:50%;border:1.5px solid var(--muted)}
+.rc.sel .rdot{background:var(--ident);border-color:var(--ident)}
+.modal textarea{width:100%;min-height:52px;resize:vertical;margin-bottom:11px}
+.modal .mrow{display:flex;gap:8px;justify-content:flex-end}
+.mnote{font-size:10.5px;color:var(--faint);margin-bottom:11px;font-family:var(--mono)}
+
+/* switcher / palette */
+.sw-modal{background:var(--panel-2);border:1px solid var(--line-strong);border-radius:10px;box-shadow:var(--sh-2);width:520px;max-width:92vw;overflow:hidden}
+.sw-modal input{width:100%;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:13px 16px;font-size:13.5px;background:transparent}
+.sw-list{max-height:320px;overflow-y:auto;padding:6px}
+.sw-item{display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:6px;font-size:12.5px;color:var(--text-2);cursor:pointer}
+.sw-item:hover,.sw-item.sel{background:var(--panel-3);color:var(--text)}
+.sw-item .k{margin-left:auto;font-size:10px;font-family:var(--mono);color:var(--faint)}
+.sw-item .glass{color:var(--ident);font-size:10px}
+.sw-cat{font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--faint);padding:7px 11px 3px}
+
+/* settings */
+.set-modal{width:560px}
+.set-tabs{display:flex;gap:6px;margin-bottom:13px}
+.hist-row{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--line-2);font-size:11.5px;color:var(--text-2)}
+.hist-row .mono{color:var(--muted);font-size:10.5px}
+
+/* toaster */
+#toaster{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:7px;z-index:900;align-items:center}
+.toast{background:var(--panel-3);border:1px solid var(--line-strong);color:var(--text);font-size:12px;padding:9px 15px;border-radius:8px;box-shadow:var(--sh-2);animation:tin .18s var(--ease)}
+@keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* autolock */
+#lock{position:fixed;inset:0;background:rgba(5,8,11,.9);backdrop-filter:blur(14px);z-index:950;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#lock.on{display:flex}
+#lock .li{font-size:14px;color:var(--text-2)}
+</style>
+</head>
+<body>
+<div id="app">
+  <nav id="rail">
+    <div class="rl-logo">id</div>
+    <button class="ri" data-view="grafo" title=""><svg viewBox="0 0 24 24"><circle cx="5" cy="6" r="2.2"/><circle cx="18" cy="5" r="2.2"/><circle cx="12" cy="12" r="2.6"/><circle cx="5" cy="18" r="2.2"/><circle cx="19" cy="18" r="2.2"/><path d="M6.8 7.2 10 10.5M16.2 6.3 13.9 9.9M6.9 16.8l3.2-3M14.4 13.8l2.9 2.9"/></svg><span class="tip">Visualização em gráfico</span></button>
+    <button class="ri" id="riSwitch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="tip">Troca rápida · Ctrl+O</span></button>
+    <button class="ri" data-view="fila"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg><span class="bdg" id="filaBdg">5</span><span class="tip">Fila de exceções</span></button>
+    <button class="ri" data-view="segmentos"><svg viewBox="0 0 24 24"><path d="M3 20V10M9 20V4M15 20v-8M21 20V7"/></svg><span class="tip">Segmentos &amp; métricas</span></button>
+    <button class="ri" data-view="clientes"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg><span class="tip">Clientes</span></button>
+    <button class="ri" data-view="api"><svg viewBox="0 0 24 24"><path d="M9 7H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h3M15 7h3a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-3M8 12h8"/></svg><span class="tip">API / Integrações</span></button>
+    <button class="ri" data-view="auditoria"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg><span class="tip">Auditoria</span></button>
+    <div class="rl-spacer"></div>
+    <button class="ri" id="riSettings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="tip">Settings · Minha conta</span></button>
+  </nav>
+
+  <div id="main">
+    <div id="tabbar"></div>
+    <div id="bgBar"></div>
+    <div id="stage"></div>
+  </div>
+
+  <aside id="asst">
+    <div id="asstHead">
+      <button id="asstToggle" title="Assistente · Ctrl+J"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M18 14l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg></button>
+      <span id="asstTitle">Assistente</span>
+    </div>
+    <div id="asstBody">
+      <div id="asstScope">Modo Análise · respondo só sobre o agregado</div>
+      <div id="asstMsgs"></div>
+      <div id="asstIn"><input id="asstInput" placeholder="Pergunte ao Assistente…"><button id="asstSend">Ir</button></div>
+    </div>
+  </aside>
+</div>
+
+<div class="ovl" id="rcOvl"><div class="modal">
+  <h2 id="rcTitle">Acesso identificado</h2>
+  <div class="msub" id="rcSub">Você vai sair do agregado e abrir dados identificados. Escolha o motivo — este acesso será registrado.</div>
+  <div class="rc-list" id="rcList"></div>
+  <textarea id="rcNote" placeholder="Nota (obrigatória se 'Outro')…"></textarea>
+  <div class="mnote">sessão elevada · expira em 15 min ociosa / 30 min máx · tudo logado</div>
+  <div class="mrow"><button class="btn btn-g" id="rcCancel">Cancelar</button><button class="btn btn-p" id="rcOk">Entrar identificado</button></div>
+</div></div>
+
+<div class="ovl" id="swOvl"><div class="sw-modal">
+  <input id="swInput" placeholder="Troca rápida — paciente, aba ou ação…">
+  <div class="sw-list" id="swList"></div>
+</div></div>
+
+<div class="ovl" id="setOvl"><div class="modal set-modal">
+  <h2>Minha conta</h2>
+  <div class="msub">operador: <b>Lucas Borelli</b> · sócio-plataforma · <span class="mono">op-001</span></div>
+  <div class="set-tabs"><span class="chip on">Conta</span><span class="chip" title="No spec: Clientes e API são abas de topo, não settings">Só conta aqui — Clientes e API são abas de topo</span></div>
+  <div style="display:flex;gap:8px;margin-bottom:13px"><input style="flex:1" value="lucas@super.id" disabled><button class="btn btn-g">Trocar email</button><button class="btn btn-g">Trocar senha</button></div>
+  <div class="label" style="margin-bottom:6px">Histórico das minhas ações</div>
+  <div id="setHist" style="max-height:190px;overflow-y:auto"></div>
+  <div class="mrow" style="margin-top:12px"><button class="btn btn-g" id="setClose">Fechar</button></div>
+</div></div>
+
+<div id="lock"><div class="li">🔒 Sessão travada por inatividade — o conteúdo foi ocultado.</div><button class="btn btn-p" id="unlock">Reautenticar (demo)</button></div>
+<div id="toaster"></div>
+<script>
+/* ============ DADOS DEMO ============ */
+const OPERADOR={nome:'Lucas Borelli',id:'op-001',papel:'sócio-plataforma'};
+const GRUPOS={plano:['Bradesco','Unimed','SulAmérica','Amil','Sem plano'],operadora:['Digimax','Rede B','Particular'],faixa:['18–30','31–45','46–60','60+'],sexo:['F','M'],condicao:['Nenhuma','Hipertensão','Diabetes','Anemia','Tireoide']};
+const CORES=['#F07E63','#3FB98C','#7F9CF5','#D3841C','#8B98A3','#D4537E'];
+function rnd(a,b){return Math.floor(a+Math.random()*(b-a+1))}
+function pick(a){return a[rnd(0,a.length-1)]}
+const NOMES=['Ana C. Oliveira','Carlos Bento','Juliana Freitas','Beatriz Lima','Rui Mendes','Maria Aparecida','Paula Nunes','Diego Rocha','Sofia Alves','Tiago Faria','Lúcia Prado','Marcos Vidal'];
+const PACS=[];
+for(let i=0;i<220;i++){
+  const nome=i<12?NOMES[i]:pick(NOMES);
+  const faixa=pick(GRUPOS.faixa);
+  const idade=faixa==='18–30'?rnd(18,30):faixa==='31–45'?rnd(31,45):faixa==='46–60'?rnd(46,60):rnd(61,86);
+  PACS.push({i,id:'SB-'+String(1000+i),nome,idade,sexo:pick(GRUPOS.sexo),plano:pick(GRUPOS.plano),operadora:pick(GRUPOS.operadora),faixa,condicao:pick(GRUPOS.condicao),
+    adesao:rnd(38,98),cobertura:rnd(50,100),atraso:rnd(0,4),
+    serie:{Ferritina:[rnd(9,20),rnd(11,24),rnd(15,30),rnd(17,36)],Hemoglobina:[rnd(105,125)/10,rnd(110,135)/10,rnd(118,145)/10,rnd(120,152)/10],Glicemia:[rnd(80,150),rnd(82,148),rnd(85,140),rnd(84,138)]}});
+}
+/* Carlos Bento = caso demo rico (conflito + restrito) */
+const CB=PACS[1]; CB.nome='Carlos Bento'; CB.idade=61; CB.sexo='M'; CB.operadora='Digimax'; CB.condicao='Diabetes'; CB.plano='Sem plano'; CB.adesao=72; CB.cobertura=88; CB.atraso=2;
+const SPARSE=PACS[7]; SPARSE.sparse=true;
+const FILA=[
+ {id:'q1',tipo:'extração incerta',pac:CB,titulo:'Ferritina — 18 ou 118 ng/mL?',sub:'OCR com confiança 0,41 · laudo Digimax 14/07',sla:'2h restantes',slaCls:'soon',campo:'Ferritina (LOINC 2276-4)',valores:['18 ng/mL (conf. 0,41)','118 ng/mL (conf. 0,39)'],doc:'…série vermelha sem alterações. <span class="hl">FERRITINA: 1 18 ng/mL</span> (método CMIA, ref. 30–400)…'},
+ {id:'q2',tipo:'conflito',pac:PACS[2],titulo:'Glicemia jejum — 2 fontes divergem',sub:'Digimax 96 mg/dL · Rede B 141 mg/dL · mesmo dia',sla:'19h restantes',slaCls:'okk',campo:'Glicemia de jejum (LOINC 1558-6)',valores:['96 mg/dL — Digimax','141 mg/dL — Rede B'],doc:'…<span class="hl">GLICOSE: 96 mg/dL</span> — jejum informado 8h (ref. 70–99)…'},
+ {id:'q3',tipo:'merge',pac:PACS[3],titulo:'Possível duplicado — CPF ausente na 2ª fonte',sub:'match probabilístico 0,87 (nome+nascimento)',sla:'fora do SLA · 6h',slaCls:'late',campo:'Identidade (merge)',valores:['Registro A — Digimax','Registro B — Rede B (sem CPF)'],doc:'…paciente <span class="hl">BEATRIZ LIMA</span>, nasc. 12/03/1991, doc. não informado…'},
+ {id:'q4',tipo:'sem código',pac:PACS[4],titulo:'Exame sem LOINC — "índice HOMA"',sub:'não casou com o dicionário · Digimax 18/07',sla:'40h restantes',slaCls:'okk',campo:'HOMA-IR (sem código)',valores:['2,7 (sem unidade padronizada)'],doc:'…<span class="hl">HOMA-IR: 2,7</span> — cálculo a partir de glicose/insulina…'},
+ {id:'q5',tipo:'consentimento',pac:PACS[5],titulo:'Pull de parceiro aguardando autorização',sub:'parceiro pediu "hemograma histórico" · WhatsApp enviado há 31h',sla:'41h restantes',slaCls:'okk',campo:'Consentimento de compartilhamento',valores:['pendente — sem resposta do paciente'],doc:'…solicitação registrada em 20/07 às 14:22. <span class="hl">Aguardando resposta do titular.</span>…'}
+];
+const CLIENTES=[
+ {nome:'Digimax',status:'conectado',sync:'há 21 min',saude:'ok',vidas:41200,contrato:'piloto · fase 1',contratadas:41200,ativadas:11830,engajadas:4210,ltv:[92,97,104,112,118],receita:'R$ 214 mil',recall:'31%',noshow:'-18%',recuperados:812,api:'2.114 chamadas / 7d'},
+ {nome:'Rede B (stub)',status:'contratada, não conectada',sync:'—',saude:'off',vidas:0,contrato:'assinado · aguardando integração',contratadas:12000,ativadas:0,engajadas:0,ltv:[],receita:'—',recall:'—',noshow:'—',recuperados:0,api:'0'}
+];
+const PARCEIROS=[
+ {nome:'Digimax',on:true,ultimo:'há 12 min',escopos:['exames:read','recall:send'],chave:'sk_live_••••8f2a'},
+ {nome:'Parceiro Farma (stub)',on:false,ultimo:'—',escopos:['receitas:read'],chave:'sk_test_••••11c9'}
+];
+const REASONS=['Resolver exceção de dado','Atender solicitação do próprio paciente','Suporte a incidente','Auditoria / qualidade','Solicitação legal','Outro'];
+let AUDIT=[
+ {t:'20/07 16:41',quem:'op-001',ev:'break-glass in',alvo:'SB-1001',motivo:'Resolver exceção de dado',det:'campos: Ferritina · duração 4m12s'},
+ {t:'20/07 16:45',quem:'op-001',ev:'correção',alvo:'SB-1001',motivo:'—',det:'Ferritina: 18→118 · v2 (append)'},
+ {t:'21/07 09:02',quem:'op-001',ev:'criação de segmento',alvo:'coorte',motivo:'—',det:'"46-60 · Digimax" · N=1.204'}
+];
+
+/* ============ ESTADO / HELPERS ============ */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+let MODE='analise', identPac=null, identMotivo=null, identT0=null, identTimer=null, identScope='full';
+let TABS=[], ACTIVE=null, TABSEQ=0;
+const VIEW_TITLES={grafo:'Gráfico',fila:'Fila de exceções',segmentos:'Segmentos',clientes:'Clientes',api:'API / Integrações',auditoria:'Auditoria'};
+function now(){const d=new Date();return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
+function log(ev,alvo,motivo,det){AUDIT.unshift({t:now(),quem:OPERADOR.id,ev,alvo,motivo:motivo||'—',det:det||''});}
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;$('#toaster').appendChild(t);setTimeout(()=>t.remove(),4200);}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function ini(n){return n.split(' ').map(x=>x[0]).slice(0,2).join('')}
+function spark(vals,w=170,h=36,color='#3FB98C'){if(!vals||vals.length<2)return '<span class="label">dados insuficientes</span>';const mn=Math.min(...vals),mx=Math.max(...vals),r=(mx-mn)||1;const pts=vals.map((v,i)=>((i/(vals.length-1))*w).toFixed(1)+','+(h-3-((v-mn)/r)*(h-8)).toFixed(1)).join(' ');return '<svg width="'+w+'" height="'+h+'"><polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="2"/></svg>'}
+
+/* ============ ABAS (preview/fixada) ============ */
+function findTab(f){return TABS.find(f)}
+function openTab(type,data,opts){opts=opts||{};
+  if(type==='auditoria'&&!findTab(t=>t.type==='auditoria'))log('consulta auditoria','—','Auditoria / qualidade','tela aberta');
+  if(type==='ficha'){const ex=findTab(t=>t.type==='ficha'&&t.pac&&t.pac.id===data.id);if(ex){activate(ex.id);return}}
+  else if(type==='filaitem'){/* sempre nova (item específico) */}
+  else{const ex=findTab(t=>t.type===type);if(ex){activate(ex.id);return}}
+  if(!opts.pinned){const pv=findTab(t=>t.preview);if(pv){closeTab(pv.id,true)}}
+  const tab={id:'t'+(++TABSEQ),type,pac:data||null,item:opts.item||null,pinned:!!opts.pinned,preview:!opts.pinned&&(type==='ficha'||type==='filaitem'),title:opts.title||VIEW_TITLES[type]||(data?data.nome:type),state:{}};
+  TABS.push(tab);activate(tab.id);
+}
+function activate(id){ACTIVE=id;renderTabs();renderStage();}
+function closeTab(id,silent){const i=TABS.findIndex(t=>t.id===id);if(i<0)return;const tab=TABS[i];
+  if((tab.type==='ficha'||tab.type==='filaitem')&&MODE==='ident'&&identPac&&tab.pac&&tab.pac.id===identPac.id){exitIdent('fechou a aba');}
+  TABS.splice(i,1);
+  if(ACTIVE===id){ACTIVE=TABS.length?TABS[Math.max(0,i-1)].id:null;}
+  if(!silent){renderTabs();renderStage();}
+}
+function pinTab(id){const t=findTab(x=>x.id===id);if(t){t.pinned=true;t.preview=false;renderTabs();}}
+function renderTabs(){
+  const bar=$('#tabbar');
+  bar.innerHTML=TABS.map(t=>'<div class="tab '+(t.id===ACTIVE?'on ':'')+(t.preview?'preview ':'')+(t.pinned?'pinned':'')+'" data-tab="'+t.id+'"><span class="t-pin">●</span><span class="t-title">'+esc(t.title)+'</span><span class="t-x" data-x="'+t.id+'">×</span></div>').join('')
+   +'<div class="sp"></div><button id="modePill" class="'+(MODE==='ident'?'ident':'')+'"><span class="dot"></span><span>'+(MODE==='ident'?('Identificado · '+esc(identPac?identPac.nome:'')):'Análise · agregado')+'</span></button>';
+  $$('#tabbar .tab').forEach(el=>{el.onclick=e=>{if(e.target.dataset.x)return;if(el.dataset.tab!==ACTIVE)activate(el.dataset.tab)};el.ondblclick=()=>pinTab(el.dataset.tab)});
+  $$('#tabbar .t-x').forEach(el=>el.onclick=e=>{e.stopPropagation();closeTab(el.dataset.x)});
+  const mp=$('#modePill'); if(mp) mp.onclick=()=>{ if(MODE==='ident') exitIdent('pelo seletor'); else toast('Você está em Análise (agregado). Identificado abre via busca, pontinho ou fila.'); };
+  renderBgBar();
+}
+
+/* ============ MODO / BREAK-GLASS ============ */
+let rcSel=null, rcAfter=null, rcCtx=null;
+function askIdent(pac,scope,ctx,after){rcSel=null;rcCtx={pac,scope,ctx};rcAfter=after;
+  $('#rcTitle').textContent='Acesso identificado — '+pac.nome;
+  $('#rcSub').textContent='Gatilho: '+ctx+'. Você vai sair do agregado. Escolha o motivo — este acesso será registrado.';
+  $('#rcList').innerHTML=REASONS.map((r,i)=>'<div class="rc" data-i="'+i+'"><span class="rdot"></span>'+r+'</div>').join('');
+  $('#rcNote').value='';
+  $$('#rcList .rc').forEach(el=>el.onclick=()=>{$$('#rcList .rc').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');rcSel=REASONS[el.dataset.i];});
+  $('#rcOvl').classList.add('on');
+}
+$('#rcCancel').onclick=()=>{$('#rcOvl').classList.remove('on');rcAfter=null;};
+$('#rcOk').onclick=()=>{
+  if(!rcSel){toast('Escolha um motivo.');return}
+  if(rcSel==='Outro'&&!$('#rcNote').value.trim()){toast('"Outro" exige nota.');return}
+  if(MODE==='ident')exitIdent('troca de alvo (re-portão)');
+  $('#rcOvl').classList.remove('on');
+  MODE='ident';identPac=rcCtx.pac;identMotivo=rcSel;identScope=rcCtx.scope;identT0=Date.now();
+  log('break-glass in',identPac.id,rcSel,'gatilho: '+rcCtx.ctx+' · escopo: '+rcCtx.scope);
+  $('#app').classList.add('ident');startIdentTimer();syncAsstScope();
+  if(rcAfter){rcAfter();rcAfter=null;}
+  renderTabs();
+};
+function exitIdent(como){
+  if(MODE!=='ident')return;
+  const dur=Math.round((Date.now()-identT0)/1000);
+  log('break-glass out',identPac?identPac.id:'—',identMotivo,'saída: '+como+' · duração '+Math.floor(dur/60)+'m'+(dur%60)+'s');
+  MODE='analise';const pid=identPac?identPac.id:null;identPac=null;identMotivo=null;clearInterval(identTimer);
+  $('#app').classList.remove('ident');syncAsstScope();
+  TABS.filter(t=>(t.type==='ficha'||t.type==='filaitem')&&t.pac&&t.pac.id===pid).forEach(t=>closeTab(t.id,true));
+  renderTabs();renderStage();toast('Sessão identificada encerrada — de volta ao agregado.');
+}
+function startIdentTimer(){clearInterval(identTimer);identTimer=setInterval(()=>{renderBgBar();const el=(Date.now()-identT0)/1000;if(el>1800){exitIdent('time-box de 30 min estourou');}},1000);}
+function renderBgBar(){const b=$('#bgBar');
+  if(MODE!=='ident'){b.classList.remove('on');b.innerHTML='';return}
+  const rem=Math.max(0,1800-Math.round((Date.now()-identT0)/1000));
+  const mm=('0'+Math.floor(rem/60)).slice(-2),ss=('0'+rem%60).slice(-2);
+  b.classList.add('on');
+  b.innerHTML='<span>⚠ IDENTIFICADO</span><b>'+esc(identPac.nome)+' · <span class="mono">'+identPac.id+'</span></b><span>motivo: '+esc(identMotivo)+'</span><span>escopo: '+identScope+'</span><span class="mono">⏱ '+mm+':'+ss+'</span><button class="out" onclick="exitIdent(\'botão sair\')">sair do identificado ✕</button>';
+}
+
+/* ============ STAGE / VIEWS ============ */
+function renderStage(){
+  const st=$('#stage');const tab=findTab(t=>t.id===ACTIVE);
+  $$('#rail .ri').forEach(r=>r.classList.toggle('on',!!tab&&r.dataset.view===tab.type));
+  if(!tab){st.innerHTML='<div class="empty"><b>Nenhuma aba aberta.</b><br>Abra o Gráfico no rail, ou Ctrl+O pra troca rápida.</div>';return}
+  const V={grafo:vGrafo,fila:vFila,segmentos:vSegmentos,clientes:vClientes,api:vAPI,auditoria:vAuditoria,ficha:vFicha,filaitem:vFilaItem};
+  (V[tab.type]||(()=>{st.innerHTML='<div class="empty">view?</div>'}))(st,tab);
+}
+
+/* ---- GRÁFICO ---- */
+let G={groupBy:'plano',dim:null,filters:{}};
+function coorte(){let a=PACS.slice();Object.entries(G.filters).forEach(([k,v])=>{a=a.filter(p=>p[k]===v)});return a}
+function vGrafo(st,tab){
+  const list=coorte();const kAnon=list.length<10;
+  const filtros=Object.entries(G.filters).map(([k,v])=>'<span class="chip on">'+k+': <b>'+esc(v)+'</b><span class="x" data-unf="'+k+'">✕</span></span>').join('');
+  st.innerHTML='<div class="view" style="max-width:none">'
+   +'<div id="gbar"><span class="label">agrupar por</span> <select id="gGroup">'+Object.keys(GRUPOS).map(g=>'<option '+(g===G.groupBy?'selected':'')+'>'+g+'</option>').join('')+'</select> '
+   +filtros
+   +'<span class="chip" id="gSave">salvar coorte ▾</span>'
+   +'<span class="kanon">N='+list.length+' · piso k-anon N=10 · coortes menores são suprimidas</span></div>'
+   +(kAnon?'<div class="empty" style="border:1px dashed var(--line-strong);border-radius:6px"><b>N muito baixo ('+list.length+').</b><br>Coorte abaixo do piso de k-anonimato — suprimida para impedir reidentificação. Alargue o filtro.</div>'
+     :'<canvas id="gcv"></canvas><div id="glegend"></div>')
+   +'<div class="label" style="margin-top:10px">clique num pontinho → break-glass · Ctrl+clique → abre fixada · clique na legenda → filtra</div></div>';
+  $('#gGroup').onchange=e=>{G.groupBy=e.target.value;G.dim=null;renderStage()};
+  $$('#gbar .x').forEach(x=>x.onclick=()=>{delete G.filters[x.dataset.unf];renderStage()});
+  $('#gSave').onclick=()=>{log('criação de segmento','coorte','—',JSON.stringify(G.filters)+' · N='+list.length);toast('Coorte salva como segmento (veja em Segmentos).')};
+  if(kAnon)return;
+  const cv=$('#gcv');const W=cv.clientWidth||cv.parentElement.clientWidth||1000;cv.width=W*2;cv.height=430*2;cv.style.height='430px';
+  const ctx=cv.getContext('2d');ctx.scale(2,2);
+  const H=430,groups=GRUPOS[G.groupBy];
+  const cx=W/2,cy=H/2,R=Math.min(W,H)*0.33;
+  const centers=groups.map((_,k)=>{const a=(k/groups.length)*Math.PI*2-Math.PI/2;return{x:cx+R*Math.cos(a),y:cy+R*Math.sin(a)}});
+  const counts=groups.map(g=>list.filter(p=>p[G.groupBy]===g).length);
+  const dots=list.map(p=>{const gi=groups.indexOf(p[G.groupBy]);if(gi>=0&&counts[gi]<10)return null; /* k-anon por grupo */
+    if(p._ra===undefined){p._ra=Math.random()*Math.PI*2;p._rr=Math.random();} /* posição estável */
+    const c=centers[gi>=0?gi:0];const r=p._rr*Math.min(W,H)*0.12;
+    return{p,gi,x:c.x+Math.cos(p._ra)*r,y:c.y+Math.sin(p._ra)*r}}).filter(Boolean);
+  tab.state.dots=dots;
+  function draw(){ctx.clearRect(0,0,W,H);dots.forEach(d=>{ctx.globalAlpha=(G.dim!=null&&d.gi!==G.dim)?0.12:0.9;ctx.beginPath();ctx.arc(d.x,d.y,4,0,7);ctx.fillStyle=CORES[d.gi%CORES.length];ctx.fill()});ctx.globalAlpha=1}
+  draw();
+  $('#glegend').innerHTML=groups.map((g,k)=>{const n=counts[k];const sup=n>0&&n<10;return '<span class="li'+(G.dim!=null&&G.dim!==k?' dim':'')+'" data-g="'+k+'"'+(sup?' title="suprimido — abaixo do piso k-anon"':'')+'><span class="sw" style="background:'+(sup?'#4B5661':CORES[k%CORES.length])+'"></span>'+g+' · <span class="mono">'+(sup?'&lt;10 suprimido':n)+'</span></span>'}).join('');
+  $$('#glegend .li').forEach(li=>li.onclick=()=>{const k=+li.dataset.g;if(G.dim===k){G.filters[G.groupBy]=groups[k];G.dim=null}else G.dim=k;renderStage()});
+  cv.onclick=e=>{const r=cv.getBoundingClientRect();const mx=(e.clientX-r.left),my=(e.clientY-r.top);
+    let best=null,bd=1e9;dots.forEach(d=>{if(G.dim!=null&&d.gi!==G.dim)return;const dd=(d.x-mx)**2+(d.y-my)**2;if(dd<bd){bd=dd;best=d}});
+    if(best&&bd<250){const pac=best.p;askIdent(pac,'ficha completa','clique no pontinho',()=>openTab('ficha',pac,{pinned:e.ctrlKey,title:pac.nome}));}
+  };
+}
+
+/* ---- FICHA DO PACIENTE ---- */
+function vFicha(st,tab){
+  const p=tab.pac;
+  if(MODE!=='ident'||!identPac||identPac.id!==p.id){st.innerHTML='<div class="empty"><b>Fora da sessão identificada.</b><br>Esta ficha só abre via break-glass.</div>';return}
+  log('campo visto',p.id,identMotivo,'ficha aberta · seções: resumo');
+  const sparse=p.sparse;
+  const conflito=(p===CB);
+  const secs=[
+   {id:'identidade',t:'Identidade',n:4,body:'<div class="exrow"><div>Nome completo</div><div class="val" style="grid-column:span 3">'+esc(p.nome)+'</div></div><div class="exrow"><div>ID super id</div><div class="val mono" style="grid-column:span 3">'+p.id+' <span class="label">(interno estável + carteirinha)</span></div></div><div class="exrow"><div>CPF</div><div class="val mono" style="grid-column:span 3">•••.••• .•••-07 <span class="label">âncora de identidade</span></div></div><div class="exrow"><div>Vínculos</div><div style="grid-column:span 3">'+esc(p.operadora)+' <span class="prov"><span class="pd"></span>origem da ingestão</span></div></div>'},
+   {id:'exames',t:'Exames / labs',n:sparse?1:6,body:examesHTML(p,conflito)},
+   {id:'remedios',t:'Remédios',n:sparse?0:2,body:sparse?'':'<div class="exrow"><div>Metformina 850 mg <span class="loinc">DCB 05800</span></div><div class="val">1cp 2x/dia</div><div><span class="tag ok">ativo</span></div><div class="prov"><span class="pd"></span>Digimax</div></div><div class="exrow"><div>Sinvastatina 20 mg <span class="loinc">DCB 08154</span></div><div class="val">1cp à noite</div><div><span class="tag ok">ativo</span></div><div class="prov"><span class="pd"></span>Digimax</div></div>'},
+   {id:'condicoes',t:'Condições',n:sparse?0:2,body:sparse?'':'<div class="exrow"><div>Diabetes mellitus tipo 2 <span class="loinc">CID E11</span></div><div></div><div><span class="tag warn">ativa</span></div><div class="prov"><span class="pd"></span>Digimax</div></div><div class="exrow"><div>Hipertensão essencial <span class="loinc">CID I10</span></div><div></div><div><span class="tag warn">ativa</span></div><div class="prov aging"><span class="pd"></span>input paciente</div></div>'},
+   {id:'tratamentos',t:'Tratamentos',n:sparse?0:1,body:sparse?'':'<div class="exrow"><div><b>Jornada Glicemia</b> — controle DM2 · início 05/07</div><div class="val">dia 16 de 90</div><div><span class="tag ok">em curso</span></div><div class="prov"><span class="pd"></span>concierge</div></div>'},
+   {id:'documentos',t:'Documentos',n:sparse?0:2,body:sparse?'':'<div class="exrow"><div>Pedido de exame — HbA1c</div><div class="val mono">18/07</div><div><span class="tag neutral">emitido</span></div><div></div></div><div class="exrow"><div>Laudo Digimax — bioquímica</div><div class="val mono">14/07</div><div><span class="tag ok">estruturado</span></div><div></div></div>'},
+   {id:'consentimento',t:'Consentimento',n:2,body:'<div class="exrow"><div>Coleta e estruturação (super id)</div><div class="val mono">10/07</div><div><span class="tag ok">ativo</span></div><div></div></div><div class="exrow"><div>Compartilhar com Digimax</div><div class="val mono">10/07</div><div><span class="tag ok">ativo</span></div><div></div></div>'},
+   {id:'auditoria',t:'Auditoria deste registro',n:0,restrito:!conflito,body:conflito?'<div class="exrow"><div class="mono" style="grid-column:span 4;font-size:11px">20/07 16:41 · op-001 · break-glass · Resolver exceção · Ferritina</div></div>':''}
+  ];
+  st.innerHTML='<div class="view">'
+   +'<div class="pf-head"><div class="pf-av">'+ini(p.nome)+'</div><div><div class="pf-name">'+esc(p.nome)+'</div><div class="pf-sub">'+p.idade+' anos · '+p.sexo+' · <span class="mono">'+p.id+'</span> · veio de '+esc(p.operadora)+' · plano '+esc(p.plano)+'</div></div>'
+   +'<div style="margin-left:auto"><button class="btn btn-g" id="pfAsk">Perguntar ao Assistente →</button></div></div>'
+   +'<div class="metrics">'
+   +'<div class="mc" title="clicável até o dado cru"><div class="ml">Adesão</div><div class="mv">'+(sparse?'—':p.adesao+'%')+'</div><div class="ms">'+(sparse?'dados insuficientes':'tomadas ÷ prescritas · por quê?')+'</div></div>'
+   +'<div class="mc"><div class="ml">Cobertura de dados</div><div class="mv">'+(sparse?'—':p.cobertura+'%')+'</div><div class="ms">'+(sparse?'dados insuficientes':'campos estruturados ÷ esperados')+'</div></div>'
+   +'<div class="mc"><div class="ml">Exames em atraso</div><div class="mv">'+(sparse?'—':p.atraso)+'</div><div class="ms">'+(sparse?'dados insuficientes':'a vencer / vencidos · por quê?')+'</div></div></div>'
+   +'<div class="card" style="margin-bottom:13px"><div class="label" style="margin-bottom:8px">Evolução longitudinal — a vida de saúde no tempo</div><div class="evo">'
+   +Object.entries(p.serie).map(([k,v])=>'<div class="evo-card"><div class="el">'+k+(sparse?'':' <span class="mono" style="color:var(--muted)">'+v[v.length-1]+'</span>')+'</div>'+spark(sparse?[v[0]]:v)+'</div>').join('')
+   +'</div></div>'
+   +'<div class="pf-grid"><nav class="pf-index">'+secs.filter(s=>s.restrito||s.n>0||s.body).map((s,i)=>'<a href="#" data-sec="'+s.id+'" class="'+(i===0?'on':'')+'">'+s.t+'</a>').join('')+'</nav>'
+   +'<div id="pfSecs">'+secs.map(s=>{
+      if(s.restrito)return '<div class="sec" id="sec-'+s.id+'"><div class="sec-h" style="cursor:default"><span class="st">'+s.t+'</span><span style="margin-left:auto"></span></div><div class="restricted" style="margin:0 13px 12px"><span class="lock">🔒</span> Restrito — seu papel não tem acesso a esta seção. <a href="#" style="color:var(--warn)">Por que não vejo isso?</a></div></div>';
+      if(s.n===0&&!s.body)return '';
+      return '<div class="sec'+(s.id==='exames'?' open':'')+'" id="sec-'+s.id+'"><div class="sec-h"><span class="st">'+s.t+'</span><span class="sc">'+s.n+'</span><span class="chev">›</span></div><div class="sec-b">'+s.body+'</div></div>';
+    }).join('')+'</div></div></div>';
+  $$('#pfSecs .sec-h').forEach(h=>{if(h.style.cursor!=='default')h.onclick=()=>{h.parentElement.classList.toggle('open');log('campo visto',p.id,identMotivo,'seção: '+h.querySelector('.st').textContent)}});
+  $$('.pf-index a').forEach(a=>a.onclick=e=>{e.preventDefault();$$('.pf-index a').forEach(x=>x.classList.remove('on'));a.classList.add('on');const el=$('#sec-'+a.dataset.sec);if(el){el.classList.add('open');el.scrollIntoView({behavior:'smooth',block:'start'})}});
+  $('#pfAsk').onclick=()=>{$('#asst').classList.add('open');$('#asstInput').focus();};
+}
+function examesHTML(p,conflito){
+  let h='';
+  if(conflito)h+='<div class="conflict"><div class="ch">⚠ VALOR EM DISPUTA — duas leituras da mesma coleta (a UI não escolhe; escolher é ato médico)</div>'
+    +'<div class="exrow"><div>Ferritina <span class="loinc">LOINC 2276-4</span></div><div class="val">18 ng/mL</div><div><span class="tag danger">baixo?</span></div><div class="prov"><span class="pd"></span>OCR conf. 0,41</div></div>'
+    +'<div class="exrow"><div>Ferritina <span class="loinc">LOINC 2276-4</span></div><div class="val">118 ng/mL</div><div><span class="tag ok">normal?</span></div><div class="prov"><span class="pd"></span>OCR conf. 0,39</div></div>'
+    +'<div class="label" style="margin-top:5px">resolver na Fila de exceções → item q1</div></div>';
+  h+='<div class="exrow"><div>Glicemia jejum <span class="loinc">LOINC 1558-6</span></div><div class="val">'+(p.serie.Glicemia[3])+' mg/dL · ref 70–99</div><div>'+(p.serie.Glicemia[3]>99?'<span class="tag warn">alto</span>':'<span class="tag ok">ok</span>')+'</div><div class="prov"><span class="pd"></span>Digimax · há 3d</div></div>';
+  h+='<div class="exrow"><div>Hemoglobina <span class="loinc">LOINC 718-7</span></div><div class="val">'+p.serie.Hemoglobina[3].toFixed(1)+' g/dL · ref 12–15,5</div><div><span class="tag ok">ok</span></div><div class="prov"><span class="pd"></span>Digimax · há 3d</div></div>';
+  h+='<div class="exrow"><div>HbA1c <span class="loinc">LOINC 4548-4</span></div><div class="val">7,2 % · ref &lt;5,7</div><div><span class="tag warn">alto</span></div><div class="prov aging"><span class="pd"></span>Digimax · há 74d</div></div>';
+  return h;
+}
+
+/* ---- FILA ---- */
+function vFila(st,tab){
+  const tipos=['todas','extração incerta','conflito','merge','sem código','consentimento'];
+  tab.state.f=tab.state.f||'todas';
+  const list=FILA.filter(q=>tab.state.f==='todas'||q.tipo===tab.state.f);
+  st.innerHTML='<div class="view"><div class="vhead"><h1>Fila de exceções</h1><span class="sub">worklist · claim → abrir = identificado field-scoped · WIP máx 5 · nunca inbox infinito</span></div>'
+   +'<div class="subfilas">'+tipos.map(t=>'<span class="chip '+(tab.state.f===t?'on':'')+'" data-f="'+t+'">'+t+'</span>').join('')+'</div>'
+   +(list.length?list.map(q=>'<div class="qitem"><div class="qtype">'+q.tipo+'</div><div class="qmain"><div class="qt">'+esc(q.titulo)+'</div><div class="qs">'+esc(q.sub)+' · <span class="mono">'+q.pac.id+'</span></div></div>'
+     +'<span class="qsla '+q.slaCls+'">'+q.sla+'</span>'
+     +'<button class="btn btn-g" data-claim="'+q.id+'">'+(q.claimed?'meu':'claim')+'</button>'
+     +'<button class="btn btn-p" data-open="'+q.id+'">abrir</button></div>').join('')
+    :'<div class="empty"><b>Nada pendente nesta sub-fila.</b><br>142 itens resolvidos nos últimos 7 dias.</div>')
+   +'</div>';
+  $$('.subfilas .chip').forEach(c=>c.onclick=()=>{tab.state.f=c.dataset.f;renderStage()});
+  $$('[data-claim]').forEach(b=>b.onclick=()=>{const q=FILA.find(x=>x.id===b.dataset.claim);q.claimed=true;toast('Item reivindicado — é seu.');renderStage()});
+  $$('[data-open]').forEach(b=>b.onclick=()=>{const q=FILA.find(x=>x.id===b.dataset.open);if(!q)return;
+    askIdent(q.pac,'field-scoped ('+q.campo+')','item da fila '+q.id,()=>openTab('filaitem',q.pac,{title:'⚙ '+q.titulo.slice(0,22)+'…',item:q}) );
+  });
+}
+function vFilaItem(st,tab){
+  const q=tab.item;
+  if(!q){st.innerHTML='<div class="empty">Item não encontrado (já resolvido?).</div>';return}
+  const p=q.pac;
+  if(MODE!=='ident'||!identPac||identPac.id!==p.id){st.innerHTML='<div class="empty">Fora da sessão identificada deste paciente.</div>';return}
+  st.innerHTML='<div class="view"><div class="vhead"><h1>'+esc(q.titulo)+'</h1><span class="sub">'+q.tipo+' · '+esc(p.nome)+' · <span class="mono">'+p.id+'</span> · field-scoped: você vê só o campo em disputa + o doc de origem</span></div>'
+   +'<div class="fs-wrap"><div>'
+   +'<div class="card" style="margin-bottom:10px"><div class="label" style="margin-bottom:7px">Campo em disputa</div><div style="font-size:13px;margin-bottom:9px">'+esc(q.campo)+'</div>'
+   +q.valores.map((v,i)=>'<div class="rc" data-v="'+i+'" style="margin-bottom:5px"><span class="rdot"></span>'+esc(v)+'</div>').join('')
+   +'<div style="display:flex;gap:8px;margin-top:11px"><button class="btn btn-p" id="fsOk">Confirmar valor</button><button class="btn btn-g" id="fsEsc">Escalar</button>'+(q.tipo==='consentimento'?'<button class="btn btn-g" id="fsWpp">Reenviar WhatsApp</button>':'')+'</div>'
+   +'<div class="mnote" style="margin-top:9px">correção é append + versão — nunca sobrescreve o original · tudo logado</div></div>'
+   +'<div class="restricted"><span class="lock">🔒</span> O prontuário completo NÃO abre por aqui — este item é field-scoped. Ficha inteira = outro break-glass.</div>'
+   +'</div><div><div class="fs-doc"><div class="dh">documento de origem · '+esc(p.operadora)+' · o trecho que gerou a dúvida</div>'+q.doc+'</div></div></div></div>';
+  let sel=null;
+  $$('#stage .rc').forEach(el=>el.onclick=()=>{$$('#stage .rc').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');sel=q.valores[el.dataset.v]});
+  $('#fsOk').onclick=()=>{if(!sel){toast('Escolha o valor correto.');return}
+    log('correção',p.id,identMotivo,q.campo+': '+sel+' · v2 (append)');
+    const i=FILA.indexOf(q);if(i>=0)FILA.splice(i,1);$('#filaBdg').textContent=FILA.length;
+    toast('Valor confirmado (v2, append). Item resolvido.');
+    closeTab(tab.id);exitIdent('item resolvido');openTab('fila');
+  };
+  $('#fsEsc').onclick=()=>{log('escalado',p.id,identMotivo,q.campo);toast('Escalado.');closeTab(tab.id);exitIdent('escalado');openTab('fila');};
+  const w=$('#fsWpp');if(w)w.onclick=()=>{toast('Pedido de consentimento reenviado pelo WhatsApp.');log('pedir consentimento',p.id,identMotivo,'reenvio')};
+}
+
+/* ---- SEGMENTOS ---- */
+function vSegmentos(st){
+  st.innerHTML='<div class="view"><div class="vhead"><h1>Segmentos &amp; métricas</h1><span class="sub">agregado · k-anon N≥10 · segmentos são objetos nomeados e compartilháveis</span></div>'
+   +'<div class="metrics" style="grid-template-columns:repeat(4,1fr)">'
+   +'<div class="mc"><div class="ml">Vidas na base</div><div class="mv">'+PACS.length+'</div><div class="ms">demo · fase 1</div></div>'
+   +'<div class="mc"><div class="ml">Cobertura média</div><div class="mv">'+Math.round(PACS.reduce((s,p)=>s+p.cobertura,0)/PACS.length)+'%</div><div class="ms">campos estruturados</div></div>'
+   +'<div class="mc"><div class="ml">Exames em atraso</div><div class="mv">'+PACS.reduce((s,p)=>s+p.atraso,0)+'</div><div class="ms">na base toda</div></div>'
+   +'<div class="mc"><div class="ml">Fila</div><div class="mv">'+FILA.length+'</div><div class="ms">exceções abertas</div></div></div>'
+   +'<div class="card"><div class="label" style="margin-bottom:8px">Segmentos salvos</div>'
+   +'<div class="exrow"><div>46–60 · Digimax</div><div class="val mono">N=1.204</div><div><span class="tag neutral">compartilhado</span></div><div><button class="btn btn-g" onclick="toast(\'Aplicado no Gráfico.\')">aplicar no gráfico</button></div></div>'
+   +'<div class="exrow"><div>Diabéticos sem HbA1c 90d</div><div class="val mono">N=87</div><div><span class="tag neutral">meu</span></div><div><button class="btn btn-g" onclick="toast(\'Aplicado no Gráfico.\')">aplicar no gráfico</button></div></div>'
+   +'<div class="exrow"><div style="color:var(--faint)">Coorte “VIP Rede B” <span class="label">re-rodou abaixo do piso</span></div><div class="val mono" style="color:var(--faint)">N&lt;10</div><div><span class="tag warn">suprimido</span></div><div></div></div>'
+   +'</div></div>';
+}
+
+/* ---- CLIENTES ---- */
+function vClientes(st,tab){
+  tab.state.c=tab.state.c||0;const c=CLIENTES[tab.state.c];
+  st.innerHTML='<div class="view"><div class="vhead"><h1>Clientes</h1><span class="sub">agregado · zero PHI · o funil honesto na frente</span>'
+   +'<span style="margin-left:auto"></span>'+CLIENTES.map((x,i)=>'<span class="chip '+(i===tab.state.c?'on':'')+'" data-c="'+i+'">'+x.nome+'</span>').join('')+'</div>'
+   +'<div class="card" style="display:flex;gap:22px;align-items:center;margin-bottom:12px"><div><div class="label">cliente</div><div style="font-size:15px;font-weight:650;margin-top:3px">'+c.nome+'</div><div class="pf-sub">'+c.contrato+'</div></div>'
+   +'<div><div class="label">integração</div><div style="margin-top:4px">'+(c.saude==='ok'?'<span class="tag ok">conectado</span>':'<span class="tag danger">não conectada</span>')+' <span class="prov '+(c.saude==='ok'?'':'stale')+'"><span class="pd"></span>sync '+c.sync+'</span></div><div class="label" style="margin-top:4px">status — nunca endpoint/porta</div></div>'
+   +'<div><div class="label">vidas contratadas</div><div class="mv" style="font-size:20px;font-family:var(--mono)">'+c.contratadas.toLocaleString('pt-BR')+'</div></div>'
+   +'<div style="margin-left:auto"><div class="label">uso da API · 7d</div><div class="mono" style="margin-top:4px">'+c.api+'</div></div></div>'
+   +'<div class="label">funil de ativação — o número honesto (contratada ≠ ativa)</div>'
+   +'<div class="funil"><div class="fstep"><div class="fv">'+c.contratadas.toLocaleString('pt-BR')+'</div><div class="fl">contratadas</div></div>'
+   +'<div class="fstep '+(c.ativadas===0?'drop':'')+'"><div class="fv">'+c.ativadas.toLocaleString('pt-BR')+'</div><div class="fl">ativadas (usaram 1x) · '+(c.contratadas?Math.round(c.ativadas/c.contratadas*100):0)+'%</div></div>'
+   +'<div class="fstep"><div class="fv">'+c.engajadas.toLocaleString('pt-BR')+'</div><div class="fl">engajadas (responderam recall) · '+(c.ativadas?Math.round(c.engajadas/c.ativadas*100):0)+'%</div></div></div>'
+   +'<div class="metrics" style="grid-template-columns:repeat(4,1fr)">'
+   +'<div class="mc"><div class="ml">LTV / paciente (evolução)</div><div class="mv" style="font-size:15px">'+(c.ltv.length?spark(c.ltv,150,30,'#F07E63'):'—')+'</div><div class="ms">'+(c.ltv.length?('R$ '+c.ltv[c.ltv.length-1]+' / mês'):'sem dado ainda')+'</div></div>'
+   +'<div class="mc"><div class="ml">Receita atribuída</div><div class="mv" style="font-size:17px">'+c.receita+'</div><div class="ms">via plataforma</div></div>'
+   +'<div class="mc"><div class="ml">Recall respondido</div><div class="mv">'+c.recall+'</div><div class="ms">no-show '+c.noshow+'</div></div>'
+   +'<div class="mc"><div class="ml">Exames recuperados</div><div class="mv">'+c.recuperados+'</div><div class="ms">pacientes que voltaram</div></div></div>'
+   +'<div class="mnote">um cliente NUNCA vê métricas de rival · exportar passa por log</div></div>';
+  $$('[data-c]').forEach(x=>x.onclick=()=>{tab.state.c=+x.dataset.c;renderStage()});
+}
+
+/* ---- API ---- */
+function vAPI(st){
+  st.innerHTML='<div class="view"><div class="vhead"><h1>API / Integrações</h1><span class="sub">API fechada · escopo é allowlist na query, não filtro de UI · nunca endpoint cru</span></div>'
+   +PARCEIROS.map(p=>'<div class="card" style="margin-bottom:9px;display:flex;gap:16px;align-items:center"><div style="min-width:170px"><b>'+p.nome+'</b><div class="pf-sub">último acesso: '+p.ultimo+'</div></div>'
+    +'<div><div class="label">escopos</div><div style="margin-top:4px">'+p.escopos.map(e=>'<span class="chip" style="margin-right:4px">'+e+'</span>').join('')+'</div></div>'
+    +'<div><div class="label">chave</div><div class="mono" style="margin-top:4px">'+p.chave+' <button class="btn btn-g" style="padding:3px 8px;font-size:10.5px" onclick="toast(\'Rotação de chave exige reason-code (demo).\')">rotacionar</button></div></div>'
+    +'<div style="margin-left:auto">'+(p.on?'<span class="tag ok">ligado</span>':'<span class="tag neutral">desligado — escopos preservados</span>')+'</div></div>').join('')
+   +'<div class="mnote">tentativa de escopo além do contrato entra no log como "tentativa negada"</div></div>';
+}
+
+/* ---- AUDITORIA ---- */
+function vAuditoria(st){
+  st.innerHTML='<div class="view"><div class="vhead"><h1>Auditoria</h1><span class="sub">append-only · tamper-evident · o auditor também é auditado</span></div>'
+   +'<table class="tbl"><thead><tr><th>quando</th><th>quem</th><th>evento</th><th>alvo</th><th>motivo</th><th>detalhe</th></tr></thead><tbody>'
+   +AUDIT.map(a=>'<tr><td class="mono">'+a.t+'</td><td class="mono">'+a.quem+'</td><td>'+(a.ev.includes('break-glass')?'<span class="tag warn">'+a.ev+'</span>':a.ev)+'</td><td class="mono">'+a.alvo+'</td><td>'+esc(a.motivo)+'</td><td style="font-size:11px;color:var(--muted)">'+esc(a.det)+'</td></tr>').join('')
+   +'</tbody></table><div class="mnote" style="margin-top:9px">consultar esta tela também gera evento · exportar o log é, ele mesmo, logado</div></div>';
+}
+
+/* ============ ASSISTENTE ============ */
+$('#asstToggle').onclick=()=>{$('#asst').classList.toggle('open');};
+$('#asst').addEventListener('transitionend',()=>{const t=findTab(x=>x.id===ACTIVE);if(t&&t.type==='grafo')renderStage();});
+function syncAsstScope(){const s=$('#asstScope');if(MODE==='ident'){s.className='';s.id='asstScope';s.classList.add('ident');s.textContent='Modo Identificado · escopo: '+identPac.nome+' · tudo logado';}else{s.classList.remove('ident');s.textContent='Modo Análise · respondo só sobre o agregado';}}
+function asstAsk(){
+  const q=$('#asstInput').value.trim();if(!q)return;$('#asstInput').value='';
+  const box=$('#asstMsgs');box.insertAdjacentHTML('beforeend','<div class="am q">'+esc(q)+'</div>');
+  let a,deny=false;
+  const ql=q.toLowerCase();
+  if(MODE==='ident'){
+    log('query assistente',identPac.id,identMotivo,'"'+q.slice(0,60)+'"');
+    if(ql.includes('compar')&&(ql.includes('coorte')||ql.includes('média')||ql.includes('media')))
+      {deny=true;a='Recusado: juntar dado identificado com agregado é proibido (risco de reidentificação). Pergunte sobre '+identPac.nome+' OU sobre coortes em Análise — nunca os dois.';}
+    else if(ql.includes('ferritina'))a='A ferritina de '+esc(identPac.nome)+' está <b>em disputa</b> (18 vs 118 ng/mL, OCR baixa confiança). Não uso valor disputado em conclusão — resolva no item q1 da fila.<span class="src">fonte: laudo Digimax 14/07 · doc não-confiável tratado como dado</span>';
+    else if(ql.includes('glicemia')||ql.includes('diabet'))a='Glicemia de jejum mais recente: '+identPac.serie.Glicemia[3]+' mg/dL (ref 70–99) e HbA1c 7,2% há 74 dias — está <b>vencendo o intervalo de reavaliação</b>. Isso é informação, não conduta (ato médico é do médico).<span class="src">fonte: Digimax · LOINC 1558-6 / 4548-4</span>';
+    else a='Sobre '+esc(identPac.nome)+': adesão '+identPac.adesao+'%, cobertura '+identPac.cobertura+'%, '+identPac.atraso+' exame(s) em atraso. Posso detalhar qualquer seção da ficha — cada resposta minha fica no log.<span class="src">fonte: registro '+identPac.id+'</span>';
+  }else{
+    if(ql.includes('quem')||ql.includes('nome')||ql.includes('cpf'))
+      {deny=true;a='Recusado: em Análise eu não revelo indivíduos. Pra abrir alguém identificado, use a busca ou um pontinho — vai passar pelo break-glass e ficar logado.';}
+    else if(ql.includes('diabet'))a='Na base demo: '+PACS.filter(p=>p.condicao==='Diabetes').length+' pacientes com condição "Diabetes" ('+Math.round(PACS.filter(p=>p.condicao==='Diabetes').length/PACS.length*100)+'%). A coorte 46–60 concentra a maior fração. Quer que eu monte esse segmento?<span class="src">fonte: agregado · k-anon ok</span>';
+    else if(ql.includes('fila'))a='A fila tem '+FILA.length+' exceções: '+FILA.map(f=>f.tipo).join(', ')+'. O item mais antigo está fora do SLA (merge, 6h).<span class="src">fonte: worklist</span>';
+    else a='Estou em Análise: respondo sobre coortes, fila, clientes e métricas agregadas. Ex.: "quantos diabéticos na base?", "como está a fila?".';
+  }
+  setTimeout(()=>{box.insertAdjacentHTML('beforeend','<div class="am a'+(deny?' deny':'')+'">'+a+'</div>');box.scrollTop=box.scrollHeight;},350);
+  box.scrollTop=box.scrollHeight;
+}
+$('#asstSend').onclick=asstAsk;
+$('#asstInput').addEventListener('keydown',e=>{if(e.key==='Enter')asstAsk()});
+
+/* ============ TROCA RÁPIDA ============ */
+let swSel=0,swItems=[];
+function openSwitcher(){$('#swOvl').classList.add('on');$('#swInput').value='';swRender('');$('#swInput').focus();}
+function swRender(q){
+  const ql=q.toLowerCase();
+  const views=Object.entries(VIEW_TITLES).filter(([k,v])=>v.toLowerCase().includes(ql)).map(([k,v])=>({t:'view',k,label:v}));
+  const pacs=ql.length>=2?PACS.filter(p=>p.nome.toLowerCase().includes(ql)||p.id.toLowerCase().includes(ql)).slice(0,6).map(p=>({t:'pac',p,label:ini(p.nome)+'. · '+p.id})):[];
+  swItems=[...views.map(v=>({...v,cat:'Abas'})),...pacs.map(p=>({...p,cat:'Pacientes'}))];swSel=0;
+  let h='',lastCat='';
+  swItems.forEach((it,i)=>{if(it.cat!==lastCat){h+='<div class="sw-cat">'+it.cat+'</div>';lastCat=it.cat}
+    h+='<div class="sw-item'+(i===swSel?' sel':'')+'" data-i="'+i+'">'+(it.t==='pac'?'<span class="glass">⚠ break-glass</span> ':'')+esc(it.label)+(it.t==='view'?'<span class="k">aba</span>':'')+'</div>'});
+  $('#swList').innerHTML=h||'<div class="empty" style="padding:18px">nada encontrado</div>';
+  $$('.sw-item').forEach(el=>el.onclick=()=>swGo(+el.dataset.i));
+}
+function swGo(i){const it=swItems[i];if(!it)return;$('#swOvl').classList.remove('on');
+  if(it.t==='view')openTab(it.k);
+  else askIdent(it.p,'ficha completa','troca rápida',()=>openTab('ficha',it.p,{title:it.p.nome}));
+}
+$('#swInput').addEventListener('input',e=>swRender(e.target.value));
+$('#swInput').addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'){swSel=Math.min(swItems.length-1,swSel+1)}else if(e.key==='ArrowUp'){swSel=Math.max(0,swSel-1)}
+  else if(e.key==='Enter'){swGo(swSel);return}else return;
+  $$('.sw-item').forEach((el,i)=>el.classList.toggle('sel',i===swSel));e.preventDefault();
+});
+$('#riSwitch').onclick=openSwitcher;
+
+/* ============ SETTINGS ============ */
+$('#riSettings').onclick=()=>{
+  if(MODE==='ident'){toast('Feche a sessão identificada antes de abrir Settings.');return}
+  $('#setHist').innerHTML=AUDIT.filter(a=>a.quem===OPERADOR.id).slice(0,8).map(a=>'<div class="hist-row"><span class="mono">'+a.t+'</span><span>'+a.ev+'</span><span class="mono">'+a.alvo+'</span></div>').join('');
+  $('#setOvl').classList.add('on');
+};
+$('#setClose').onclick=()=>$('#setOvl').classList.remove('on');
+
+/* ============ AUTO-LOCK (demo: 3 min sem input) ============ */
+let lastAct=Date.now();
+['mousemove','keydown','click'].forEach(ev=>document.addEventListener(ev,()=>lastAct=Date.now()));
+setInterval(()=>{if(Date.now()-lastAct>180000&&!$('#lock').classList.contains('on')){if(MODE==='ident')exitIdent('auto-lock');$('#lock').classList.add('on');}},5000);
+$('#unlock').onclick=()=>{$('#lock').classList.remove('on');lastAct=Date.now();toast('Reautenticado — de volta em Análise.');};
+
+/* ============ TECLADO ============ */
+document.addEventListener('keydown',e=>{
+  const mod=e.ctrlKey||e.metaKey;
+  if(mod&&e.key.toLowerCase()==='o'){e.preventDefault();openSwitcher();}
+  else if(mod&&e.key.toLowerCase()==='j'){e.preventDefault();$('#asst').classList.toggle('open');}
+  else if(mod&&e.shiftKey&&e.key.toLowerCase()==='x'){e.preventDefault();exitIdent('atalho ⌘⇧X');}
+  else if(e.key==='Escape'){$$('.ovl').forEach(o=>o.classList.remove('on'));}
+});
+
+/* ============ RAIL NAV + INIT ============ */
+$$('#rail .ri[data-view]').forEach(r=>r.onclick=()=>openTab(r.dataset.view));
+$('#filaBdg').textContent=FILA.length;
+openTab('grafo');
+window.addEventListener('resize',()=>{const t=findTab(x=>x.id===ACTIVE);if(t&&t.type==='grafo')renderStage();});
+</script>
+</body>
+</html>
